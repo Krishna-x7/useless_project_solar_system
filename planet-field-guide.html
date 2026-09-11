@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Guide to the Solar System — Extremely Useless Facts</title>
+<meta name="description" content="Fly through the solar system and collect completely useless facts about every planet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Fraunces:ital,wght@0,500;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------
+   Field Guide to Nearby Planets
+   A mid-century "space tourism poster" aesthetic:
+   flat color blocks, chunky display type, dashed orbit rings,
+   passport-stamp style fact cards.
+--------------------------------------------------------- */
+
+:root {
+  --bg: #0b1424;
+  --bg-deep: #060c17;
+  --panel: #101f36;
+  --panel-line: rgba(243, 236, 217, 0.16);
+  --cream: #f3ecd9;
+  --cream-dim: rgba(243, 236, 217, 0.62);
+  --ink: #081019;
+  --sun: #e8871e;
+  --coral: #e85d4c;
+  --teal: #3fa79b;
+
+  --font-display: "Archivo Black", "Arial Black", sans-serif;
+  --font-head: "Space Grotesk", sans-serif;
+  --font-body: "Fraunces", Georgia, serif;
+
+  --dur-warp: 620ms;
+  --dur-arrive: 520ms;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--font-head);
+  overflow-x: hidden;
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+::selection { background: var(--sun); color: var(--ink); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a { color: inherit; }
+
+#stars {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse at 50% -10%, #182a45 0%, var(--bg) 55%, var(--bg-deep) 100%);
+}
+
+#warp {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ---------------- Header / Footer ---------------- */
+
+.site-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2.4rem 1.5rem 1rem;
+}
+
+.eyebrow {
+  font-family: var(--font-head);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--sun);
+  margin: 0 0 0.6rem;
+}
+
+.site-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 5vw, 3.1rem);
+  line-height: 1.02;
+  margin: 0 0 0.7rem;
+  letter-spacing: 0.01em;
+}
+
+.site-sub {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.02rem;
+  color: var(--cream-dim);
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.site-footer {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+  padding: 1.2rem 1rem 2rem;
+}
+
+/* ---------------- Layout ---------------- */
+
+main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.view {
+  width: 100%;
+  display: none;
+}
+
+.view.is-active {
+  display: block;
+}
+
+/* ---------------- System view ---------------- */
+
+#view-system {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+}
+#view-system.is-active { display: flex; }
+
+.orbit-field {
+  position: relative;
+  width: min(92vw, 640px);
+  aspect-ratio: 1 / 1;
+}
+
+.sun {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15%;
+  aspect-ratio: 1/1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #ffd479, var(--sun) 55%, #b95f10 100%);
+  box-shadow: 0 0 42px 6px rgba(232, 135, 30, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+.sun-label {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px dashed var(--panel-line);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Each planet sits at a fixed angle on its ring — stable and always
+   clickable, like a printed orbit chart rather than a live simulation.
+   The angle is set inline per-planet; this just anchors the pivot point. */
+.orbit-pivot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* This box is just a positioning anchor and can be huge (for outer
+     planets) — let clicks pass through it to whatever's actually
+     underneath, and only the planet button itself re-enables them. */
+  pointer-events: none;
+}
+
+/* The button is an oversized, invisible hit target (easy to click/tap);
+   the visible planet is a smaller span centered inside it. Both are
+   circles, so the pivot's fixed rotation doesn't affect how they look.
+   Sized independently so tiny planets like Mercury stay easy to hit. */
+.planet-dot {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  transform: translate(50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.planet-visual {
+  display: block;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  animation: pulse-glow 3.6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(243, 236, 217, 0); }
+  50%      { box-shadow: 0 0 14px 2px rgba(243, 236, 217, 0.28); }
+}
+
+.planet-dot:hover .planet-visual,
+.planet-dot:focus-visible .planet-visual {
+  transform: scale(1.35);
+}
+
+.planet-dot:focus-visible {
+  outline: none;
+}
+
+.planet-dot:focus-visible .planet-visual {
+  box-shadow: 0 0 0 3px var(--cream);
+}
+
+.hint {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--cream-dim);
+  font-size: 0.92rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* ---------------- Close-up view ---------------- */
+
+#view-closeup {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid var(--panel-line);
+  color: var(--cream);
+  font-family: var(--font-head);
+  font-size: 0.85rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1.4rem;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.back-btn:hover { background: var(--panel); border-color: var(--cream-dim); }
+
+.closeup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.closeup-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.planet-big {
+  width: min(46vw, 320px);
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  position: relative;
+  will-change: transform, filter;
+  animation: rotate-slow 40s linear infinite;
+  box-shadow: -18px -10px 60px rgba(0,0,0,0.45) inset, 0 0 60px rgba(0,0,0,0.35);
+}
+
+@keyframes rotate-slow {
+  from { background-position: 0 0; }
+  to   { background-position: -200px 0; }
+}
+
+.ring-visual {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 165%;
+  height: 46%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  border: 14px solid rgba(228, 197, 144, 0.55);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.fact-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 18px;
+  padding: 1.8rem 1.9rem 2rem;
+  position: relative;
+}
+
+.fact-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.9rem;
+}
+
+.stamp {
+  font-family: var(--font-head);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  color: var(--cream-dim);
+}
+
+.stamp-ghost {
+  color: var(--teal);
+  border-color: rgba(63, 167, 155, 0.5);
+}
+
+.planet-name {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0 0 0.3rem;
+  line-height: 1;
+}
+
+.planet-tagline {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--cream-dim);
+  font-size: 1.05rem;
+  margin: 0 0 1.4rem;
+}
+
+.fact-label {
+  font-family: var(--font-head);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  color: var(--sun);
+  margin: 0 0 0.7rem;
+  border-top: 1px solid var(--panel-line);
+  padding-top: 1rem;
+}
+
+.fact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.fact-list li {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.45;
+  padding-left: 1.3rem;
+  position: relative;
+}
+
+.fact-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.closeup-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.2rem;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: none;
+  border: 1px solid var(--panel-line);
+  color: var(--cream);
+  font-family: var(--font-head);
+  font-size: 0.9rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.nav-btn:hover { background: var(--panel); border-color: var(--cream-dim); }
+
+.nav-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: var(--panel-line);
+  padding: 0;
+  cursor: pointer;
+}
+
+.nav-dot.is-active {
+  background: var(--sun);
+}
+
+/* ---------------- Transition states ---------------- */
+
+.orbit-field.is-warping,
+.planet-big.is-warping {
+  will-change: transform, filter;
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 760px) {
+  .closeup-grid {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+  }
+  .closeup-stage { min-height: 220px; }
+  .planet-big { width: 46vw; }
+}
+
+/* ---------------- Reduced motion ---------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .planet-visual, .planet-big {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 1ms !important;
+  }
+}
+
+</style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="warp"></canvas>
+
+  <header class="site-header">
+    <p class="eyebrow">Vol. I — The Sun's Neighborhood</p>
+    <h1 class="site-title">A Field Guide to Nearby Planets</h1>
+    <p class="site-sub">Click any planet to fly in close and learn something you will never need to know again.</p>
+  </header>
+
+  <main id="main">
+
+    <!-- SYSTEM VIEW -->
+    <section id="view-system" class="view is-active" aria-label="Solar system overview">
+      <div class="orbit-field" id="orbit-field">
+        <div class="sun" id="sun" title="The Sun">
+          <span class="sun-label">Sol</span>
+        </div>
+        <!-- orbit rings + planets injected by JS -->
+      </div>
+      <p class="hint">↑ tap a planet to fly in for a closer look</p>
+    </section>
+
+    <!-- CLOSE-UP VIEW -->
+    <section id="view-closeup" class="view" aria-label="Planet close-up">
+      <button class="back-btn" id="back-btn" type="button">
+        <span aria-hidden="true">←</span> Back to the system
+      </button>
+
+      <div class="closeup-grid">
+        <div class="closeup-stage">
+          <div class="planet-big" id="closeup-planet"></div>
+          <div class="ring-visual" id="ring-visual" hidden></div>
+        </div>
+
+        <article class="fact-card" id="fact-card">
+          <div class="fact-card-top">
+            <span class="stamp" id="stamp-order">01 / 09</span>
+            <span class="stamp stamp-ghost">CONFIRMED VISIT</span>
+          </div>
+          <h2 class="planet-name" id="planet-name">—</h2>
+          <p class="planet-tagline" id="planet-tagline">—</p>
+          <p class="fact-label">Extremely Useless Facts</p>
+          <ul class="fact-list" id="fact-list"></ul>
+        </article>
+      </div>
+
+      <div class="closeup-nav">
+        <button class="nav-btn" id="prev-btn" type="button">‹ Previous planet</button>
+        <div class="nav-dots" id="nav-dots"></div>
+        <button class="nav-btn" id="next-btn" type="button">Next planet ›</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Distances, sizes and orbit speeds are not remotely to scale. Please don't use this for navigation.</p>
+  </footer>
+
+  <script>
+/* ---------------------------------------------------------
+   Field Guide to Nearby Planets — app logic
+   - builds the orbiting system view
+   - drives the "fly through space" zoom/blur/warp transition
+   - renders the close-up fact card for each planet
+--------------------------------------------------------- */
+
+const PLANETS = [
+  {
+    id: "mercury",
+    name: "Mercury",
+    tagline: "The one that's closest but somehow not the hottest.",
+    gradient: "radial-gradient(circle at 35% 30%, #c9c4c1, #8f8a86 45%, #4d4a48 100%)",
+    dotSize: 14,
+    orbitPercent: 18,
+    orbitSeconds: 9,
+    facts: [
+      "A year here lasts 88 Earth days, but a single sunrise-to-sunrise day lasts 176 Earth days — the day outlives the year.",
+      "Despite being closest to the Sun, it isn't the hottest planet. That honor goes to Venus.",
+      "Surface temperatures swing from 430°C by day to -180°C at night, with no atmosphere to even things out.",
+      "Mercury is slowly shrinking. It has cooled and wrinkled by several kilometers since it formed.",
+    ],
+  },
+  {
+    id: "venus",
+    name: "Venus",
+    tagline: "Spins backwards and rains acid that never lands.",
+    gradient: "radial-gradient(circle at 35% 30%, #f2d18a, #cf9a49 45%, #93641f 100%)",
+    dotSize: 20,
+    orbitPercent: 27,
+    orbitSeconds: 13,
+    facts: [
+      "A day on Venus (243 Earth days) is longer than its year (225 Earth days).",
+      "It spins backwards compared to most planets — the Sun rises in the west.",
+      "Surface temperature hits about 465°C, hot enough to melt lead.",
+      "It rains sulfuric acid, but the drops evaporate long before reaching the ground.",
+    ],
+  },
+  {
+    id: "earth",
+    name: "Earth",
+    tagline: "You are here. Probably.",
+    gradient: "radial-gradient(circle at 35% 30%, #7fc4e0, #2f7fae 45%, #1c4f75 100%)",
+    dotSize: 20,
+    orbitPercent: 36,
+    orbitSeconds: 17,
+    facts: [
+      "It's the only planet not named after a god — \"Earth\" simply means \"ground\" in Old English.",
+      "Days are getting longer by about 1.8 milliseconds per century, thanks to the Moon's pull.",
+      "Humans have mapped less of the ocean floor than the surface of Mars.",
+      "It's the densest planet in the solar system.",
+      "Lightning strikes the surface roughly 44 times every second, somewhere.",
+    ],
+  },
+  {
+    id: "mars",
+    name: "Mars",
+    tagline: "Blue sunsets and the tallest mountain around.",
+    gradient: "radial-gradient(circle at 35% 30%, #e4936a, #b8532c 45%, #7a3319 100%)",
+    dotSize: 16,
+    orbitPercent: 45,
+    orbitSeconds: 22,
+    facts: [
+      "Sunsets on Mars are blue, the opposite of Earth's, because of how dust scatters light.",
+      "Home to Olympus Mons, a volcano roughly 2.5 times the height of Mount Everest.",
+      "A day is 24 hours 37 minutes, almost a perfect match for Earth's.",
+      "Its two moons, Phobos and Deimos, are so small you could drive around either in a few hours.",
+    ],
+  },
+  {
+    id: "jupiter",
+    name: "Jupiter",
+    tagline: "A storm the size of Earth that's been going for centuries.",
+    gradient: "linear-gradient(180deg, #e7c396 0%, #cf9a5f 20%, #b97a45 40%, #e2b988 55%, #a86a3d 70%, #d9ab77 85%, #b8824e 100%)",
+    dotSize: 40,
+    orbitPercent: 56,
+    orbitSeconds: 30,
+    facts: [
+      "The Great Red Spot is a storm bigger than Earth that's raged for at least 190 years.",
+      "It has at least 95 known moons, and astronomers keep finding more.",
+      "A day is under 10 hours, the fastest spin of any planet in the solar system.",
+      "It radiates more heat than it receives from the Sun.",
+    ],
+  },
+  {
+    id: "saturn",
+    name: "Saturn",
+    tagline: "Less dense than water. Would float in a big enough bathtub.",
+    gradient: "linear-gradient(180deg, #ecdcb0 0%, #e0c68f 25%, #d3b578 50%, #e6d19c 75%, #c9a868 100%)",
+    dotSize: 34,
+    orbitPercent: 67,
+    orbitSeconds: 40,
+    hasRings: true,
+    facts: [
+      "It's the only planet in the solar system less dense than water. In theory, it would float.",
+      "Its rings are mostly ice and rock, and only about 10 meters thick despite spanning thousands of kilometers.",
+      "A hexagonal jet stream wider than two Earths churns permanently at its north pole.",
+      "One year on Saturn lasts about 29.5 Earth years.",
+    ],
+  },
+  {
+    id: "uranus",
+    name: "Uranus",
+    tagline: "Rolls around the Sun on its side, sniffing of rotten eggs.",
+    gradient: "radial-gradient(circle at 35% 30%, #bdeee6, #7fc9bf 45%, #4a8f88 100%)",
+    dotSize: 26,
+    orbitPercent: 78,
+    orbitSeconds: 52,
+    facts: [
+      "It rotates on its side, tilted about 98°, so it basically rolls around the Sun like a ball.",
+      "Its clouds contain hydrogen sulfide, the same compound that gives rotten eggs their smell.",
+      "Each pole gets 42 years of continuous sunlight, followed by 42 years of darkness.",
+      "It was the first planet discovered with a telescope, in 1781.",
+    ],
+  },
+  {
+    id: "neptune",
+    name: "Neptune",
+    tagline: "Found by math before anyone ever saw it.",
+    gradient: "radial-gradient(circle at 35% 30%, #7c9ee8, #3f5fb0 45%, #223a72 100%)",
+    dotSize: 26,
+    orbitPercent: 89,
+    orbitSeconds: 64,
+    facts: [
+      "It has the fastest winds in the solar system, clocked at up to 2,100 km/h.",
+      "It was discovered through mathematical prediction before anyone spotted it in a telescope.",
+      "One year on Neptune takes 165 Earth years — it has completed just one orbit since its 1846 discovery.",
+      "Its moon Triton orbits backwards and is slowly spiraling inward.",
+    ],
+  },
+  {
+    id: "pluto",
+    name: "Pluto",
+    tagline: "Bonus round: the dwarf planet with a grudge.",
+    gradient: "radial-gradient(circle at 35% 30%, #e6dfe9, #b9aec2 45%, #746a83 100%)",
+    dotSize: 10,
+    orbitPercent: 98,
+    orbitSeconds: 78,
+    facts: [
+      "It was a full planet for 76 years before its reclassification as a \"dwarf planet\" in 2006.",
+      "Its heart-shaped glacier, Tombaugh Regio, is made of frozen nitrogen.",
+      "A year on Pluto lasts 248 Earth years — it hasn't completed one full orbit since its 1930 discovery.",
+      "It's smaller than Earth's Moon.",
+    ],
+  },
+];
+
+const WARP_MS = 650;
+const ARRIVE_MS = 520;
+
+const orbitField = document.getElementById("orbit-field");
+const systemView = document.getElementById("view-system");
+const closeupView = document.getElementById("view-closeup");
+const closeupPlanetEl = document.getElementById("closeup-planet");
+const ringVisual = document.getElementById("ring-visual");
+const planetNameEl = document.getElementById("planet-name");
+const planetTaglineEl = document.getElementById("planet-tagline");
+const factListEl = document.getElementById("fact-list");
+const stampOrderEl = document.getElementById("stamp-order");
+const navDotsEl = document.getElementById("nav-dots");
+
+let currentIndex = 0;
+let isAnimating = false;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/* ---------------- Build the system view ---------------- */
+
+function buildSystem() {
+  // Fixed angle per planet (in degrees) so every planet sits at a stable,
+  // always-clickable point on its ring — like a printed orbit chart rather
+  // than a live simulation. Spaced by a steady sweep so nothing overlaps.
+  PLANETS.forEach((planet, i) => {
+    const angle = -90 + i * 40;
+
+    // orbitPercent is the ring's diameter as a percent of the field's own
+    // width, so it must stay under 100 to keep every planet inside the
+    // visible square (previously this was doubled, pushing outer planets
+    // off the field entirely and under the footer, silently eating clicks).
+    const ring = document.createElement("div");
+    ring.className = "orbit-ring";
+    ring.style.width = `${planet.orbitPercent}%`;
+    ring.style.height = `${planet.orbitPercent}%`;
+    orbitField.appendChild(ring);
+
+    const pivot = document.createElement("div");
+    pivot.className = "orbit-pivot";
+    pivot.style.width = `${planet.orbitPercent}%`;
+    pivot.style.height = `${planet.orbitPercent}%`;
+    pivot.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "planet-dot";
+    dot.setAttribute("aria-label", `Fly to ${planet.name}`);
+    dot.dataset.index = i;
+
+    const visual = document.createElement("span");
+    visual.className = "planet-visual";
+    visual.style.width = `${planet.dotSize}px`;
+    visual.style.height = `${planet.dotSize}px`;
+    visual.style.background = planet.gradient;
+    visual.style.animationDelay = `${i * -0.6}s`;
+    dot.appendChild(visual);
+
+    dot.addEventListener("click", () => {
+      if (isAnimating) return;
+      enterCloseupFrom(dot, i);
+    });
+
+    pivot.appendChild(dot);
+    orbitField.appendChild(pivot);
+  });
+}
+
+/* ---------------- Render the close-up card ---------------- */
+
+function renderCloseup(index) {
+  const planet = PLANETS[index];
+  closeupPlanetEl.style.background = planet.gradient;
+  ringVisual.hidden = !planet.hasRings;
+
+  planetNameEl.textContent = planet.name;
+  planetTaglineEl.textContent = planet.tagline;
+  stampOrderEl.textContent = `${String(index + 1).padStart(2, "0")} / ${String(PLANETS.length).padStart(2, "0")}`;
+
+  factListEl.innerHTML = "";
+  planet.facts.forEach((fact) => {
+    const li = document.createElement("li");
+    li.textContent = fact;
+    factListEl.appendChild(li);
+  });
+
+  navDotsEl.innerHTML = "";
+  PLANETS.forEach((p, i) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "nav-dot" + (i === index ? " is-active" : "");
+    dot.setAttribute("aria-label", `Jump to ${p.name}`);
+    dot.addEventListener("click", () => {
+      if (isAnimating || i === currentIndex) return;
+      flyWithinCloseup(i);
+    });
+    navDotsEl.appendChild(dot);
+  });
+}
+
+/* ---------------- Warp streak canvas effect ---------------- */
+
+function warpEffect(durationMs) {
+  const canvas = document.getElementById("warp");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const lineCount = window.innerWidth < 640 ? 50 : 90;
+  const angles = Array.from({ length: lineCount }, () => Math.random() * Math.PI * 2);
+  const bases = angles.map(() => 30 + Math.random() * 150);
+  const start = performance.now();
+
+  function frame(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    const env = t < 0.5 ? t / 0.5 : 1 - (t - 0.5) / 0.5;
+    canvas.style.opacity = env.toFixed(3);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < lineCount; i++) {
+      const a = angles[i];
+      const len = bases[i] * (0.35 + env * 1.6);
+      const x1 = cx + Math.cos(a) * 30;
+      const y1 = cy + Math.sin(a) * 30;
+      const x2 = cx + Math.cos(a) * (30 + len);
+      const y2 = cy + Math.sin(a) * (30 + len);
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0, "rgba(243,236,217,0)");
+      grad.addColorStop(1, `rgba(243,236,217,${0.55 * env})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.opacity = 0;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- Transitions ---------------- */
+
+async function enterCloseupFrom(dotEl, index) {
+  isAnimating = true;
+  const rect = dotEl.getBoundingClientRect();
+  const fieldRect = orbitField.getBoundingClientRect();
+  const originX = rect.left + rect.width / 2 - fieldRect.left;
+  const originY = rect.top + rect.height / 2 - fieldRect.top;
+  const origin = `${originX}px ${originY}px`;
+  PLANETS[index].origin = origin;
+
+  warpEffect(WARP_MS + ARRIVE_MS + 150);
+
+  orbitField.style.transformOrigin = origin;
+  orbitField.style.transition = `transform ${WARP_MS}ms cubic-bezier(.55,0,.85,.35), filter ${WARP_MS}ms ease`;
+  requestAnimationFrame(() => {
+    orbitField.style.transform = "scale(34)";
+    orbitField.style.filter = "blur(26px)";
+  });
+  await wait(WARP_MS);
+
+  systemView.classList.remove("is-active");
+  closeupView.classList.add("is-active");
+  currentIndex = index;
+  renderCloseup(currentIndex);
+
+  orbitField.style.transition = "none";
+  orbitField.style.transform = "none";
+  orbitField.style.filter = "none";
+  void orbitField.offsetWidth;
+
+  closeupPlanetEl.style.transition = "none";
+  closeupPlanetEl.style.transform = "scale(2.6)";
+  closeupPlanetEl.style.filter = "blur(24px)";
+  void closeupPlanetEl.offsetWidth;
+  closeupPlanetEl.style.transition = `transform ${ARRIVE_MS}ms cubic-bezier(.16,.9,.3,1), filter ${ARRIVE_MS}ms ease`;
+  requestAnimationFrame(() => {
+    closeupPlanetEl.style.transform = "scale(1)";
+    closeupPlanetEl.style.filter = "blur(0px)";
+  });
+  await wait(ARRIVE_MS);
+  isAnimating = false;
+}
+
+async function flyWithinCloseup(newIndex) {
+  isAnimating = true;
+  warpEffect(WARP_MS + ARRIVE_MS + 150);
+
+  closeupPlanetEl.style.transition = `transform ${WARP_MS}ms cubic-bezier(.55,0,.85,.35), filter ${WARP_MS}ms ease`;
+  requestAnimationFrame(() => {
+    closeupPlanetEl.style.transform = "scale(2.8)";
+    closeupPlanetEl.style.filter = "blur(26px)";
+  });
+  await wait(WARP_MS);
+
+  currentIndex = newIndex;
+  renderCloseup(currentIndex);
+
+  closeupPlanetEl.style.transition = "none";
+  closeupPlanetEl.style.transform = "scale(2.6)";
+  closeupPlanetEl.style.filter = "blur(24px)";
+  void closeupPlanetEl.offsetWidth;
+  closeupPlanetEl.style.transition = `transform ${ARRIVE_MS}ms cubic-bezier(.16,.9,.3,1), filter ${ARRIVE_MS}ms ease`;
+  requestAnimationFrame(() => {
+    closeupPlanetEl.style.transform = "scale(1)";
+    closeupPlanetEl.style.filter = "blur(0px)";
+  });
+  await wait(ARRIVE_MS);
+  isAnimating = false;
+}
+
+async function backToSystem() {
+  isAnimating = true;
+  const planet = PLANETS[currentIndex];
+  warpEffect(WARP_MS + ARRIVE_MS + 150);
+
+  closeupPlanetEl.style.transition = `transform ${WARP_MS}ms cubic-bezier(.55,0,.85,.35), filter ${WARP_MS}ms ease`;
+  requestAnimationFrame(() => {
+    closeupPlanetEl.style.transform = "scale(3.2)";
+    closeupPlanetEl.style.filter = "blur(28px)";
+  });
+  await wait(WARP_MS);
+
+  closeupView.classList.remove("is-active");
+  systemView.classList.add("is-active");
+
+  orbitField.style.transformOrigin = planet.origin || "50% 50%";
+  orbitField.style.transition = "none";
+  orbitField.style.transform = "scale(34)";
+  orbitField.style.filter = "blur(26px)";
+  void orbitField.offsetWidth;
+  orbitField.style.transition = `transform ${ARRIVE_MS}ms cubic-bezier(.16,.9,.3,1), filter ${ARRIVE_MS}ms ease`;
+  requestAnimationFrame(() => {
+    orbitField.style.transform = "scale(1)";
+    orbitField.style.filter = "blur(0px)";
+  });
+  await wait(ARRIVE_MS);
+
+  orbitField.style.transition = "";
+  orbitField.style.transform = "";
+  orbitField.style.filter = "";
+
+  closeupPlanetEl.style.transition = "none";
+  closeupPlanetEl.style.transform = "none";
+  closeupPlanetEl.style.filter = "none";
+  isAnimating = false;
+}
+
+/* ---------------- Controls ---------------- */
+
+document.getElementById("back-btn").addEventListener("click", () => {
+  if (!isAnimating) backToSystem();
+});
+
+document.getElementById("prev-btn").addEventListener("click", () => {
+  if (isAnimating) return;
+  const newIndex = (currentIndex - 1 + PLANETS.length) % PLANETS.length;
+  flyWithinCloseup(newIndex);
+});
+
+document.getElementById("next-btn").addEventListener("click", () => {
+  if (isAnimating) return;
+  const newIndex = (currentIndex + 1) % PLANETS.length;
+  flyWithinCloseup(newIndex);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!closeupView.classList.contains("is-active")) return;
+  if (e.key === "Escape") backToSystem();
+  if (e.key === "ArrowRight" && !isAnimating) flyWithinCloseup((currentIndex + 1) % PLANETS.length);
+  if (e.key === "ArrowLeft" && !isAnimating) flyWithinCloseup((currentIndex - 1 + PLANETS.length) % PLANETS.length);
+});
+
+/* ---------------- Background starfield ---------------- */
+
+function initStars() {
+  const canvas = document.getElementById("stars");
+  const ctx = canvas.getContext("2d");
+  let stars = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const count = Math.floor((canvas.width * canvas.height) / 9000);
+    stars = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.3 + 0.2,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.4 + Math.random() * 0.8,
+    }));
+  }
+
+  function draw(now) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach((s) => {
+      const twinkle = 0.5 + 0.5 * Math.sin(now * 0.001 * s.speed + s.phase);
+      ctx.globalAlpha = 0.25 + twinkle * 0.6;
+      ctx.fillStyle = "#f3ecd9";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  requestAnimationFrame(draw);
+}
+
+/* ---------------- Init ---------------- */
+
+buildSystem();
+renderCloseup(0);
+initStars();
+
+</script>
+</body>
+</html>
