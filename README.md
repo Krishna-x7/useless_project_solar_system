@@ -67,7 +67,9 @@ For Software:
 # Installation
 
 No installation or build process is required.
+Option-1: https://krishna-x7.github.io/useless_project_solar_system/
 
+Option-2:
 1.  Download or clone the project.
 2.  Open `index.html` in a modern web browser.
 
