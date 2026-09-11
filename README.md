@@ -6,7 +6,7 @@
 
 ## Basic Details
 
-### Team Name: \[Team Name\]
+### Team Name: [DSYNC]
 
 ### Team Members
 
